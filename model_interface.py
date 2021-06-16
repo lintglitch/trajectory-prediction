@@ -1,4 +1,5 @@
 import numpy as np
+import statistics
 
 import config
 import util
@@ -15,13 +16,21 @@ def test_model(model, test_data):
 
 
 # TODO perhaps rewrite this to custom metrics class
-def calculate_final_metrics(model, eval_x, eval_y):
+def calculate_final_metrics(model, eval_x, eval_y, filepath=None):
     """
     Calculates metrics for the entire dataset.
+        filepath - if given will save as csv
     """
     predictions = model(eval_x)
-    distance = util.mean_euclidean_distance(eval_y, predictions)
-    print(f"MED: {distance}")
+    distances = util.mean_euclidean_distances(eval_y, predictions)
+    mean_distance = statistics.mean(distances)
+
+    if filepath:
+        with open(filepath, 'w') as f:
+            for distance in distances:
+                f.write(str(distance) + '\n')
+
+    print(f"MED: {mean_distance}")
 
 
 def concatenate_x_goal(x, goal):
@@ -46,7 +55,7 @@ def concatenate_x_goal_batch(x, goal):
     """
     Cobines single x and goal batch into a (time, 2 + goal_cells) matrix.
     """
-    assert x.shape == (config.INPUT_FRAME_NUMBER, 2)
+    assert x.shape == (config.INPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES)
     assert goal.shape == (25,)
 
     # repeat goal one-hot vector for length of input sequence

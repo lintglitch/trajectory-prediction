@@ -17,8 +17,9 @@ def rotate_array(p, origin=(0, 0), degrees=0):
     return np.squeeze((R @ (p.T-o.T) + o.T).T)
 
 
+# ADE/MDE
 # TODO also implement FDE
-def mean_euclidean_distance(ground_truth, prediction):
+def mean_euclidean_distances(ground_truth, prediction):
     # print(ground_truth.shape, prediction.shape, ground_truth.shape[0], prediction.shape[0])
     batches = prediction.shape[0]
     prediction_length = prediction.shape[1]
@@ -27,7 +28,8 @@ def mean_euclidean_distance(ground_truth, prediction):
         for t in range(prediction_length):
             error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
             errors.append(error)
-    return statistics.mean(errors)
+    return errors
+    # return statistics.mean(errors)
 
 
 def get_goal_index(position):
