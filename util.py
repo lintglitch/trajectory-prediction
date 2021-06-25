@@ -18,7 +18,6 @@ def rotate_array(p, origin=(0, 0), degrees=0):
 
 
 # ADE/MDE
-# TODO also implement FDE
 def mean_euclidean_distances(ground_truth, prediction):
     # print(ground_truth.shape, prediction.shape, ground_truth.shape[0], prediction.shape[0])
     batches = prediction.shape[0]
@@ -30,6 +29,18 @@ def mean_euclidean_distances(ground_truth, prediction):
             errors.append(error)
     return errors
     # return statistics.mean(errors)
+
+
+# FDE
+def final_displacement_error(ground_truth, prediction):
+    batches = prediction.shape[0]
+    assert ground_truth.shape[1] == prediction.shape[1]
+    errors = []
+    for b in range(batches):
+        t = -1
+        error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
+        errors.append(error)      
+    return errors
 
 
 def get_goal_index(position):
@@ -75,3 +86,9 @@ def goal_index_to_xy_indices(goal_index):
 
 def apply_randomness_to_goal_prediction(goal):
     pass
+
+
+def save_array_to_file(filepath, array):
+    with open(filepath, 'w') as f:
+        for a in array:
+            f.write(str(a) + '\n')

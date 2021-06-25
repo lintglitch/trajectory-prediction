@@ -22,15 +22,17 @@ def calculate_final_metrics(model, eval_x, eval_y, filepath=None):
         filepath - if given will save as csv
     """
     predictions = model(eval_x)
-    distances = util.mean_euclidean_distances(eval_y, predictions)
-    mean_distance = statistics.mean(distances)
+    mde_distances = util.mean_euclidean_distances(eval_y, predictions)
+    fde_distances = util.final_displacement_error(eval_y, predictions)
 
     if filepath:
-        with open(filepath, 'w') as f:
-            for distance in distances:
-                f.write(str(distance) + '\n')
+        util.save_array_to_file(filepath + '_mde.csv', mde_distances)
+        util.save_array_to_file(filepath + '_fde.csv', fde_distances)
 
-    print(f"MED: {mean_distance}")
+    mde_mean = statistics.mean(mde_distances)
+    fde_mean = statistics.mean(fde_distances)
+    print(f"MED: {mde_mean}")
+    print(f"FDE: {fde_mean}")
 
 
 def concatenate_x_goal(x, goal):
