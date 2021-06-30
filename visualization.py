@@ -94,7 +94,7 @@ def draw_path(x, ground_truth, goal=None, prediction_model=None, name=None, min_
             color = (color_intensity, color_intensity, color_intensity)
             rect = patches.Rectangle((x_pos, y_pos), scaling_factor, scaling_factor, facecolor=color)
 
-            print(f"Goal {goal_index_x}, {goal_index_y}: {val}")
+            print(f"Goal ({goal_index_x}, {goal_index_y}): {val:.2f}")
             ax.add_patch(rect)
 
     # generate the goal grid
