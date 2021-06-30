@@ -12,6 +12,8 @@ SCALING_FACTOR = 10000
 # increase this above 1 to allow goals further away then the grid
 # TODO does goal size make sense? grid does not support this as of yet, neither does the visualization
 GOAL_SIZE = 1
+# width and height of the goal grid in number of cells, e.g. 5 would be a 5 x 5 grid
+GOAL_GRID_SIZE = 5
 
 ## Sequence slicing parameters
 # number of frames each second

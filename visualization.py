@@ -58,7 +58,7 @@ def draw_input_path(x, y, goal_pos, goal_index):
     plt.show()
 
 
-def draw_path(x, ground_truth, goal=None, prediction_model=None, name=None, min_goal_percent = 0.1):
+def draw_path(x, ground_truth, goal=None, prediction_model=None, name=None, min_goal_percent = 0.05):
     # seperate the x/y coordinates of input and ground_truth
     x_xvals = x[:,0]
     x_yvals = x[:,1]
@@ -90,11 +90,11 @@ def draw_path(x, ground_truth, goal=None, prediction_model=None, name=None, min_
             goal_index_x, goal_index_y = util.goal_index_to_xy_indices(i)
             x_pos = goal_index_x*scaling_factor - 1
             y_pos = -goal_index_y*scaling_factor + 0.6
-            color_intensity = 1.0 - val / 3
+            color_intensity = 1.0 - val / 2
             color = (color_intensity, color_intensity, color_intensity)
             rect = patches.Rectangle((x_pos, y_pos), scaling_factor, scaling_factor, facecolor=color)
 
-            print(i, goal_index_x, goal_index_y)
+            print(f"Goal {goal_index_x}, {goal_index_y}: {val}")
             ax.add_patch(rect)
 
     # generate the goal grid

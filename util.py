@@ -3,6 +3,7 @@ import scipy.spatial
 import numpy as np
 import math
 import statistics
+import random
 
 import config
 
@@ -45,7 +46,7 @@ def final_displacement_error(ground_truth, prediction):
 
 def get_goal_index(position):
     """
-    Gets goal grid coordinates for 5x5 goal.
+    Gets goal grid coordinates for 5x5 goal from x, y positions.
     """
     x, y = position
 
@@ -75,17 +76,76 @@ def get_goal_index(position):
     row = -(int(math.copysign(row, y)) - 2)
     assert(0 <= row <= 4)
 
-    return row * 5 + col
+    return row * config.GOAL_GRID_SIZE + col
+
+
+def xy_indices_to_goal_index(x, y):
+    """
+    Returns goal index for given x, y indices of the goal grid. Will return
+    None if outside of grid.
+    """
+    if not 0 <= x < config.GOAL_GRID_SIZE:
+        return None
+    
+    if not 0 <= y < config.GOAL_GRID_SIZE:
+        return None
+
+    return x + y * config.GOAL_GRID_SIZE
 
 
 def goal_index_to_xy_indices(goal_index):
-    row = int(goal_index // 5)
-    col = goal_index % 5
+    row = int(goal_index // config.GOAL_GRID_SIZE)
+    col = goal_index % config.GOAL_GRID_SIZE
     return col, row
 
 
-def apply_randomness_to_goal_prediction(goal):
-    pass
+def apply_randomness_to_adjacent_goal_predictions(goal_predictions, amount=0.1, step_size=0.1, distance=1):
+    """
+    Makes absolute goal predictions less reliable, by given tiles adjacent to the goal
+    a random chance. Will return a copy of the goal predictions with the randomness applied.
+
+    Input:
+        goal: linear numpy array of length Goal_Grid**2
+        amount: amount of randomness, 1.0 means completely random goals
+        step_size: in what step sizes the randomness should be added, smaller values result in more even distribution
+        distance: how far away grid cells can be to be affected
+    """
+    # make copy
+    goals_copy = np.copy(goal_predictions)
+    
+    # iterate over goals and randomize
+    goal_amount = goals_copy.shape[0]
+    for i in range(goal_amount):
+        goal = goals_copy[i]
+        assert(sum(goal) < 1.05)
+        assert(0 < amount <= 1)
+
+        # reduce goal by the randomness amount, so we keep total probability at 1.0
+        goal *= 1.0 - amount
+
+        randomness_added = 0
+        goal_index = np.argmax(goal)
+        goal_x, goal_y = goal_index_to_xy_indices(goal_index)
+
+        while randomness_added < amount:
+            x_dir = random.randint(-distance, distance)
+            y_dir = random.randint(-distance, distance)
+
+            x_index = goal_x + x_dir
+            y_index = goal_y + y_dir
+            new_goal_index = xy_indices_to_goal_index(x_index, y_index)
+
+            # if the coordinates are outside bounds then try again
+            if new_goal_index is None:
+                continue
+
+            goal[new_goal_index] += step_size
+            randomness_added += step_size
+        
+        assert(sum(goal) >= 0.95)
+        assert(sum(goal) < 1.0 + 2*step_size)
+
+    return goals_copy
 
 
 def save_array_to_file(filepath, array):
