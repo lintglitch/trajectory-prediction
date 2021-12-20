@@ -70,7 +70,7 @@ def concatenate_x_goal_batch(x, goal):
 
 def predict_once(model, x, goal=None):
     """
-    Makes single prediction using the model.
+    Makes single prediction using the model. Expects no batch dimension (batch size of one).
 
     Inputs:
         model - trained model
@@ -94,3 +94,18 @@ def predict_once(model, x, goal=None):
     
     prediction = model(x_input)[0]
     return prediction
+
+
+def prediction_sampling(model, x, samples=100, goal=None):
+    """
+    Makes single prediction multiple times. Useful for non-deterministic models.
+    """
+
+    predictions = []
+    for _ in range(samples):
+        predictions.append(predict_once(model, x, goal=goal))
+    
+    return predictions
+
+
+# def predict_batch(model, x, goal=None):

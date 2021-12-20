@@ -1,4 +1,3 @@
-
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -9,6 +8,9 @@ import model_interface
 
 
 def draw_complete_path(frame, name):
+    """
+    Draws the complete trajectory of a single person.
+    """
     x_vals = frame.x.to_list()
     y_vals = frame.y.to_list()
     
@@ -19,8 +21,7 @@ def draw_complete_path(frame, name):
 
 def draw_input_path(x, y, goal_pos, goal_index):
     """
-    Draws input data.
-    x = 
+    Draws input data formatted to size.
     """
     xvals_of_x = x[:,0]
     yvals_of_x = x[:,1]
@@ -58,7 +59,23 @@ def draw_input_path(x, y, goal_pos, goal_index):
     plt.show()
 
 
-def draw_path(x, ground_truth, goal=None, prediction_model=None, name=None, min_goal_percent = 0.05):
+def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_percent = 0.05):
+    """
+    Draws generated prediction.
+
+    Arguments
+        x: single batch input
+        ground_truth: correct future path
+        predictions: list of generated predictions
+        goal: prediction of the pedestrian goal
+        name: title of the output plot
+        min_goal_percent: min goal percentage that still gets displayed
+
+    Output
+        blue: input
+        red: ground-truth
+        green: prediction
+    """
     # seperate the x/y coordinates of input and ground_truth
     x_xvals = x[:,0]
     x_yvals = x[:,1]
@@ -109,13 +126,13 @@ def draw_path(x, ground_truth, goal=None, prediction_model=None, name=None, min_
     ax.plot(gt_xvals, gt_yvals, 'r')
 
     # given the prediction model generate a prediction and draw it
-    if prediction_model:
-        prediction = model_interface.predict_once(prediction_model, x, goal=goal)
-        # prediction_input = x.reshape(1, x.shape[0], x.shape[1])
-        # prediction = prediction_model(prediction_input)[0]
-        px = prediction[:,0]
-        py = prediction[:,1]
-        ax.plot(px, py, 'g')
+    if predictions is not None:
+        for prediction in predictions:
+            # prediction = model_interface.predict_once(prediction_model, x, goal=goal)
+            # TODO, slightly change color
+            px = prediction[:,0]
+            py = prediction[:,1]
+            ax.plot(px, py, 'g')
         # print(prediction)
 
     # mark current position
@@ -132,7 +149,7 @@ def draw_path(x, ground_truth, goal=None, prediction_model=None, name=None, min_
 def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, skip=0, rnd=False, name="path"):
     """
     Draws multiple predictions.
-    Inputs:
+    Arguments:
         x - (batch, input-time-steps, features) matrix of positions
         ground_truth - (batch, output-time-steps, features) matrix
         goals - (batch, one-hot-vector)
@@ -165,4 +182,10 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
             goal_batch = goals[batch_index]
 
         plot_name = "{} {}".format(name, batch_index)
-        draw_path(x_batch, gt_batch, goal=goal_batch, prediction_model=prediction_model, name=plot_name)
+
+        predictions = None
+        if prediction_model:
+            predictions = [ model_interface.predict_once(prediction_model, x_batch, goal=goal_batch) ]
+
+
+        draw_path(x_batch, gt_batch, goal=goal_batch, predictions=predictions, name=plot_name)

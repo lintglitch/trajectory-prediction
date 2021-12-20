@@ -218,21 +218,21 @@ def divide_and_format(persons, train_ratio=0.7, eval_ratio=0.2):
 
 def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
     df = pd.read_csv(file_path, names=["time", "id", "x", "y", "z", "velocity", "motion_angle", "facing_angle"])
-    print(df.head())
+    # print(df.head())
 
     # remove unnecessary columns to save memory
     df = df.drop(columns=['z', 'velocity', 'motion_angle', 'facing_angle'])
-    print(df.dtypes)
-    print(df.head())
+    # print(df.dtypes)
+    # print(df.head())
 
     # convert time
     df['time'] = pd.to_datetime(df['time'], unit='s')
-    print(df.time.head())
+    # print(df.time.head())
 
     # scale x, y
     df['x'] = df['x'] / config.SCALING_FACTOR
     df['y'] = df['y'] / config.SCALING_FACTOR
-    print(df.dtypes)
+    # print(df.dtypes)
 
     persons, max_vals = generate_sequences(df)
 
