@@ -38,6 +38,10 @@ def calculate_final_metrics(model, eval_x, eval_y, filepath=None):
 def concatenate_x_goal(x, goal):
     """
     Cobines x and goal into a (batch, time, 2 + goal_cells) matrix.
+
+    Inputs:
+        x - (batch, time, 2)
+        goal - (time, 2)
     """
 
     # repeat goal one-hot-vectors for each frame
@@ -66,46 +70,6 @@ def concatenate_x_goal_batch(x, goal):
 
     x_combined = np.concatenate( (x, goal_ext), axis=1 )
     return x_combined
-
-
-def predict_once(model, x, goal=None):
-    """
-    Makes single prediction using the model. Expects no batch dimension (batch size of one).
-
-    Inputs:
-        model - trained model
-        x - input values of shape (time-steps, features)
-            if model requires goal then x should either already be concatenated or goal must be given
-        goal - will concatenate the goal to the x values before predicting
-    
-    Returns (time-steps, 2) matrix, consisting of the x/y positions.
-    """
-    if model is None or x is None:
-        return None
-    
-    x_input = x
-
-    # combine the goal information into the input positions
-    if goal is not None:
-        x_input = concatenate_x_goal_batch(x, goal)
-
-    # add batch dimension
-    x_input = np.expand_dims(x_input, axis=0)
-    
-    prediction = model(x_input)[0]
-    return prediction
-
-
-def prediction_sampling(model, x, samples=100, goal=None):
-    """
-    Makes single prediction multiple times. Useful for non-deterministic models.
-    """
-
-    predictions = []
-    for _ in range(samples):
-        predictions.append(predict_once(model, x, goal=goal))
-    
-    return predictions
 
 
 # def predict_batch(model, x, goal=None):

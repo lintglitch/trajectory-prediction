@@ -10,8 +10,9 @@ import util
 
 def generate_sequences(df):
     """
-    Returns a list of people.
-    Has the following format: a list of lists of (x, goal, y)
+     Takes a pandas file with the following relevant columns: id, x, y, time
+
+    Returns a list of people. Has the following format: a list of lists of (x, goal, y)
         Every unique person has a list of (x, goal, y)
     """
 
@@ -217,6 +218,19 @@ def divide_and_format(persons, train_ratio=0.7, eval_ratio=0.2):
 
 
 def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
+    """
+    Parses a single csv atc file, which always represents a day.
+    
+    Splits dataset into train, eval and test. Test set will only be generated if train and eval percentages do not sum to 1.0.
+
+    Returns: (train_data, eval_data, test_data)
+
+    Each of these is a tuple of the following format: (x, goals, y)
+        x - [batches, INPUT_FRAME_NUMBER, 2]
+        goals - [batches, GOAL_GRID_SIZE**2], its a one hot encoded vector
+        y - [batches, OUTPUT_FRAME_NUMBER, 2]
+    """
+
     df = pd.read_csv(file_path, names=["time", "id", "x", "y", "z", "velocity", "motion_angle", "facing_angle"])
     # print(df.head())
 
@@ -242,3 +256,10 @@ def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
     # return train_data, eval_data, test_data
     data = divide_and_format(persons, train_ratio=train_ratio, eval_ratio=eval_ratio)
     return data
+
+
+# frame rate: 30
+def parse_stanford(file_path):
+    df = pd.read_csv("video0/annotations.txt", sep=' ', names=["id", "xmin", "ymin", "xmax", "ymax", "frame", "lost", "occluded", "generated", "label"])
+    df['x'] = (df['xmin'] + df['xmax']) // 2
+    df['y'] = (df['ymin'] + df['ymax']) // 2
