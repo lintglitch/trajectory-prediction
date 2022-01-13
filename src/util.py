@@ -5,7 +5,7 @@ import math
 import statistics
 import random
 
-import config
+from src import config
 
 # taken from
 # https://stackoverflow.com/questions/34372480/rotate-point-about-another-point-in-degrees-python

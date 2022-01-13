@@ -6,9 +6,9 @@ import tensorflow_probability as tfp
 import tensorflow.keras as keras
 from keras import layers
 
-import config
-import util
-import model_interface
+from src import config
+from src import util
+from src import model_interface
 
 MAX_EPOCHS = 10
 

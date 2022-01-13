@@ -1,8 +1,8 @@
 import numpy as np
 import statistics
 
-import config
-import util
+from src import config
+from src import util
 
 
 def test_model(model, test_data):

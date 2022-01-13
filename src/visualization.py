@@ -3,8 +3,8 @@ import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-import util
-import model_interface
+from src import util
+from src import model_interface
 
 
 def draw_complete_path(frame, name):

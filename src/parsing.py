@@ -4,8 +4,8 @@ import random
 import logging
 from tqdm import tqdm
 
-import config
-import util
+from src import config
+from src import util
 
 
 def generate_sequences(df):
