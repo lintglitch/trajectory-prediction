@@ -2,7 +2,6 @@ import scipy
 import scipy.spatial
 import numpy as np
 import math
-import statistics
 import random
 
 from src import config

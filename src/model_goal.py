@@ -6,24 +6,24 @@ import tensorflow_probability as tfp
 import tensorflow.keras as keras
 from keras import layers
 
+from src import model
 from src import config
 from src import util
 from src import model_interface
 
 MAX_EPOCHS = 10
 
-class ModelGoal:
-    def __init__(self, model):
+class ModelGoal(model.ModelBase):
+    def __init__(self):
         """
         Inputs:
             train_data - for infering the correct input shape
         """
-        self.model = model
-        print(self.model.summary())
+        self.model = None
 
 
-    def train(self, train_data, eval_data):
-        assert self.model is not None
+    def train(self, model, train_data, eval_data):
+        self._init_model_before_training(model)
 
         # use past path as input
         train_x = train_data[0]
@@ -46,21 +46,6 @@ class ModelGoal:
     
 
     def estimate(self, data):
-        return self.model(data[0])
-
-
-def simple_cnn(train_data):
-    output_size = config.GOAL_GRID_SIZE**2
-
-    inputs = keras.Input(shape=train_data[0].shape[1:])
-    x = layers.Conv1D(filters=32, kernel_size=3, activation='relu')(inputs)
-    # x = layers.Conv1D(filters=32, kernel_size=3, activation='relu')(x)
-    x = layers.MaxPooling1D(pool_size=2)(x)
-    
-    # x = layers.MaxPooling1D(pool_size=2)(x)
-    x = layers.Flatten()(x)
-    # x = layers.Dense(output_size, activation='relu')(x)
-    outputs = layers.Dense(output_size, activation='softmax')(x)
-    
-    model = keras.Model(inputs=inputs, outputs=outputs)
-    return model
+        tensor = self.model(data[0])
+        arr = tensor.numpy()
+        return arr
