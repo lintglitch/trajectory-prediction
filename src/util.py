@@ -3,6 +3,7 @@ import scipy.spatial
 import numpy as np
 import math
 import random
+import statistics
 
 from src import config
 
@@ -18,17 +19,18 @@ def rotate_array(p, origin=(0, 0), degrees=0):
 
 
 # ADE/MDE
-def mean_euclidean_distances(ground_truth, prediction):
-    # print(ground_truth.shape, prediction.shape, ground_truth.shape[0], prediction.shape[0])
+def average_displacement_error(ground_truth, prediction):
     batches = prediction.shape[0]
     prediction_length = prediction.shape[1]
     errors = []
     for b in range(batches):
+        batch_error = []
         for t in range(prediction_length):
             error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
-            errors.append(error)
+            batch_error.append(error)
+        
+        errors.append(statistics.mean(batch_error))
     return errors
-    # return statistics.mean(errors)
 
 
 # FDE
@@ -41,6 +43,52 @@ def final_displacement_error(ground_truth, prediction):
         error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
         errors.append(error)      
     return errors
+
+
+# mADE
+def minimum_average_displacement_error(ground_truth, prediction_distribution):
+    """
+    Calculates for every time step the minimum displacement error between the ground truth position
+    and the closest of the prediction positions.
+    """
+    batches = prediction_distribution[0].shape[0]
+    prediction_length = prediction_distribution[0].shape[1]
+    errors = []
+    for b in range(batches):
+        batch_error = []
+        for t in range(prediction_length):
+            
+            # add the smallest distance for this time step within the samples
+            time_step_errors = []
+            for prediction in prediction_distribution:
+                error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
+                time_step_errors.append(error)
+            
+            batch_error.append(min(time_step_errors))
+        
+        errors.append(statistics.mean(batch_error))
+    return errors
+
+
+# mFDE
+def minimum_final_displacement_error(ground_truth, prediction_distribution):
+    batches = prediction_distribution[0].shape[0]
+    prediction_length = prediction_distribution[0].shape[1]
+    errors = []
+    for b in range(batches):
+        t = -1
+
+        # add the smallest distance for this time step within the samples
+        time_step_errors = []
+        for prediction in prediction_distribution:
+            error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
+            time_step_errors.append(error)
+
+        errors.append(min(time_step_errors))      
+    return errors
+
+
+# Kullback-Leibler divergence
 
 
 def get_goal_index(position):

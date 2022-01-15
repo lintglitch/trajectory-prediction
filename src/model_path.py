@@ -103,7 +103,7 @@ class ModelPath(model.ModelBase):
         return predictions
 
 
-    def metrics(self, path_input, ground_truth, filepath=None, goals=None):
+    def metrics_geometric(self, x, ground_truth, filepath=None, goals=None):
         """
         Calculates metrics for the entire dataset.
             x - input path
@@ -111,25 +111,57 @@ class ModelPath(model.ModelBase):
             filepath - if given will save as csv
             goals - pedestrian goal input, necessary for models that use the goal
         """
-        x = path_input
-
         if self.uses_goal:
-            if goals is None:
-                print("No goals provided, although model depends on it!")
-                return None
-            
-            # if the model requires goals, then we need to add the right input as well
-            x = model_interface.concatenate_x_goal(path_input, goals)
+            self._setup_goal_input(x, ground_truth)
 
         predictions = self.model(x)
-        mde_distances = util.mean_euclidean_distances(ground_truth, predictions)
+        mde_distances = util.average_displacement_error(ground_truth, predictions)
         fde_distances = util.final_displacement_error(ground_truth, predictions)
 
         if filepath:
-            util.save_array_to_file(filepath + '_mde.csv', mde_distances)
-            util.save_array_to_file(filepath + '_fde.csv', fde_distances)
+            util.save_array_to_file(filepath + '_ADE.csv', mde_distances)
+            util.save_array_to_file(filepath + '_FDE.csv', fde_distances)
 
         mde_mean = statistics.mean(mde_distances)
         fde_mean = statistics.mean(fde_distances)
-        print(f"MED: {mde_mean}")
-        print(f"FDE: {fde_mean}")
+        print(f"ADE mean: {mde_mean}")
+        print(f"FDE mean: {fde_mean}")
+    
+
+    def metrics_probabilistic(self, x, ground_truth, samples=100, filepath=None, goals=None):
+        """
+        Calculates metrics for the entire dataset.
+            x - input path
+            ground_truth - actual path taken by the pedestrian
+            filepath - if given will save as csv
+            goals - pedestrian goal input, necessary for models that use the goal
+        """
+        if self.uses_goal:
+            self._setup_goal_input(x, ground_truth)
+
+        predictions = []
+        for _ in range(samples):
+            predictions.append(self.model(x))
+
+        mde_distances = util.minimum_average_displacement_error(ground_truth, predictions)
+        fde_distances = util.minimum_final_displacement_error(ground_truth, predictions)
+
+        if filepath:
+            util.save_array_to_file(filepath + '_mADE.csv', mde_distances)
+            util.save_array_to_file(filepath + '_mFDE.csv', fde_distances)
+
+        mde_mean = statistics.mean(mde_distances)
+        fde_mean = statistics.mean(fde_distances)
+        print(f"mADE mean: {mde_mean}")
+        print(f"mFDE mean: {fde_mean}")
+    
+
+    def _setup_goal_input(self, x, goals):
+        if goals is None:
+            print("No goals provided, although model depends on it!")
+            return None
+        
+        # if the model requires goals, then we need to add the right input as well
+        extended_x = model_interface.concatenate_x_goal(x, goals)
+
+        return extended_x

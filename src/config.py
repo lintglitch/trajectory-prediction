@@ -16,14 +16,20 @@ GOAL_SIZE = 1
 GOAL_GRID_SIZE = 5
 
 ## Sequence slicing parameters
-# number of frames each second
+# number of seconds used as input
+INPUT_SECONDS = 4
+# number of seconds generated as output
+OUTPUT_SECONDS = 4
+# number of seconds the goal is after the output
+GOAL_OFFSET_SECONDS = 2
+# number of frames each second (should be identical to what parsing expects)
 FRAME_FREQUENCY = 10
 # number of input frames
 # ms per frame * seconds
-INPUT_FRAME_NUMBER = FRAME_FREQUENCY * 4
+INPUT_FRAME_NUMBER = FRAME_FREQUENCY * INPUT_SECONDS
 # number of output frames
-OUTPUT_FRAME_NUMBER = FRAME_FREQUENCY * 4
-# offset from y horizon that should be used as goal point
+OUTPUT_FRAME_NUMBER = FRAME_FREQUENCY * OUTPUT_SECONDS
+# number of frames after the path output, that should be considered the goal
 # TODO right now goal is always 3 seconds behind the horizon, make this random
 GOAL_FRAME_OFFSET = FRAME_FREQUENCY * 3
 
