@@ -11,7 +11,6 @@ from src import config
 from src import util
 from src import model_interface
 
-MAX_EPOCHS = 10
 
 class ModelGoal(model.ModelBase):
     def __init__(self):
@@ -22,7 +21,7 @@ class ModelGoal(model.ModelBase):
         self.model = None
 
 
-    def train(self, model, train_data, eval_data):
+    def train(self, model, train_data, eval_data, batch_size=128, epochs=10):
         self._init_model_before_training(model)
 
         # use past path as input
@@ -35,12 +34,20 @@ class ModelGoal(model.ModelBase):
 
         self.model.compile(loss='categorical_crossentropy',
                     optimizer=tf.optimizers.Adam(),
-                    metrics=['accuracy'])
+                    metrics=[tf.keras.metrics.CategoricalAccuracy()])
                     # metrics=[tf.metrics.MeanAbsoluteError()])
 
-        history = self.model.fit(x=train_x, y=train_y, epochs=MAX_EPOCHS,
-                            shuffle=True,
-                            validation_data=(eval_x, eval_y))
+    #     hist = self.model.fit(x_train, y_train, batch_size=self.batch_size, epochs=self.nb_epochs, shuffle=True,
+    #                             verbose=True, validation_data=(x_val, y_val), callbacks=self.callbacks)
+
+        reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.5, patience=50,
+                                                      min_lr=0.0001)
+        callbacks = [reduce_lr]
+
+        history = self.model.fit(x=train_x, y=train_y, batch_size=batch_size, epochs=epochs, verbose=True,
+                            shuffle=True, validation_data=(eval_x, eval_y),
+                            callbacks=callbacks
+                            )
 
         return history
     

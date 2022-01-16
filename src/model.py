@@ -1,3 +1,4 @@
+import tensorflow as tf
 import tensorflow.keras as keras
 
 class ModelBase:
@@ -14,3 +15,6 @@ class ModelBase:
         assert self.model is None
 
         self.model = model
+
+        if not tf.config.list_physical_devices('GPU'):
+            print('Warning: No GPU found. Training without GPU acceleration.')

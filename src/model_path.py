@@ -10,7 +10,6 @@ from src import config
 from src import util
 from src import model_interface
 
-MAX_EPOCHS = 10
 
 class ModelPath(model.ModelBase):
     def __init__(self, uses_goal=False):
@@ -23,7 +22,7 @@ class ModelPath(model.ModelBase):
         self.model = None
 
 
-    def train(self, model, train_data, eval_data, train_goals=None, eval_goals=None):
+    def train(self, model, train_data, eval_data, train_goals=None, eval_goals=None, batch_size=128, epochs=10):
         """
         Trains the model,
         """
@@ -54,9 +53,9 @@ class ModelPath(model.ModelBase):
                     metrics=[tf.metrics.MeanAbsoluteError()])
                     # metrics=[tf.metrics.MeanAbsoluteError()])
 
-        history = self.model.fit(x=train_x, y=train_y, epochs=MAX_EPOCHS,
-                            shuffle=True,
-                            validation_data=(eval_x, eval_y))
+        history = self.model.fit(x=train_x, y=train_y, batch_size=batch_size, epochs=epochs, verbose=True,
+                            shuffle=True, validation_data=(eval_x, eval_y)
+                            )
 
         # history = model.fit(x=train_x, y=train_y, epochs=MAX_EPOCHS,
         #                     shuffle=True,
@@ -100,6 +99,8 @@ class ModelPath(model.ModelBase):
         for _ in range(samples):
             predictions.append(self.predict_once(x, goal=goal))
         
+        # TODO: uncertainty
+
         return predictions
 
 
@@ -111,10 +112,12 @@ class ModelPath(model.ModelBase):
             filepath - if given will save as csv
             goals - pedestrian goal input, necessary for models that use the goal
         """
+        input_x = x
+        # extend input if goals are used
         if self.uses_goal:
-            self._setup_goal_input(x, ground_truth)
+            input_x = self._setup_goal_input(x, goals)
 
-        predictions = self.model(x)
+        predictions = self.model(input_x)
         mde_distances = util.average_displacement_error(ground_truth, predictions)
         fde_distances = util.final_displacement_error(ground_truth, predictions)
 
@@ -136,12 +139,14 @@ class ModelPath(model.ModelBase):
             filepath - if given will save as csv
             goals - pedestrian goal input, necessary for models that use the goal
         """
+        input_x = x
+        # extend input if goals are used
         if self.uses_goal:
-            self._setup_goal_input(x, ground_truth)
+            input_x = self._setup_goal_input(x, goals)
 
         predictions = []
         for _ in range(samples):
-            predictions.append(self.model(x))
+            predictions.append(self.model(input_x))
 
         mde_distances = util.minimum_average_displacement_error(ground_truth, predictions)
         fde_distances = util.minimum_final_displacement_error(ground_truth, predictions)
