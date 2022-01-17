@@ -11,11 +11,13 @@ from src import config
 CONV_WIDTH = 3
 LSTM_DEPTH = 128
 
+# TODO try sigmoid activation function
 
 def simple_lstm(train_data):
     ## simple LSTM (works both for goal or no goal)
     model = tf.keras.Sequential()
     model.add(layers.LSTM(LSTM_DEPTH))
+    # TODO: try sigmoid
     model.add(layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES))
     model.add(layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES]))
     return model

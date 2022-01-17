@@ -10,7 +10,7 @@ from src import util
 
 def generate_sequences(df):
     """
-     Takes a pandas file with the following relevant columns: id, x, y, time
+    Main parsing function. Takes a pandas file with the following relevant columns: id, x, y, time
 
     Returns a list of people. Has the following format: a list of lists of (x, goal, y)
         Every unique person has a list of (x, goal, y)
@@ -23,11 +23,14 @@ def generate_sequences(df):
     # contains all people paths
     all_persons_list = []
 
-    # contains the maximum values
-    max_vals = []
-
+    # skipped trajectories
     skipped_too_short = 0
     skipped_frequency_problem = 0
+
+    # skipped sequences
+    skipped_absolute_too_high = 0
+
+    # total generated sequences
     gen_total = 0
 
     # filtered_sequences = []
@@ -117,8 +120,13 @@ def generate_sequences(df):
 
                 # get the highest absolute value within that path
                 max_val = max(abs(max(x.min(), x.max(), key=abs)), abs(max(y.min(), y.max(), key=abs)))
-                max_vals.append(max_val)
-                assert max_val <= 2.0, "Maximum value is {}".format(max_val)
+
+                # skip all trajectories with too large absolute values
+                if max_val >= 1.0:
+                    skipped_absolute_too_high += 1
+                    continue
+
+                assert max_val <= 1.1, "Maximum value is {}".format(max_val)
 
                 goal_index = util.get_goal_index(goal_pos)
                 # draw_input_path(x, y, goal_pos, goal_index)    
@@ -140,11 +148,16 @@ def generate_sequences(df):
         else:
             logging.debug("Empty person list generated")
     
-    logging.info("Generated %s sequences total from %s trajectories.", gen_total, len(all_persons_list))
-    logging.info("Skipped %s trajectories. %s too short. %s frequency issue (like gaps).",
-        skipped_too_short + skipped_frequency_problem, skipped_too_short, skipped_frequency_problem)
+    print(f"{len(ids)} unique ids found. Generated {gen_total} sequences total from {len(all_persons_list)} trajectories.")
+    skipped_trajectories_total = skipped_too_short + skipped_frequency_problem
+    print(f"""Skipped {skipped_trajectories_total} trajectories.
+        {skipped_too_short} too short
+        {skipped_frequency_problem} frequency issues (like gaps)
+    """)
+
+    print(f"Skipped {skipped_absolute_too_high} sequences ({round((skipped_absolute_too_high * 100) / gen_total, 3)}%) because of abnormally high absolute value after normalization")
     
-    return all_persons_list, max_vals
+    return all_persons_list
 
 
 def _format_x_y(persons):
@@ -170,6 +183,9 @@ def _format_x_y(persons):
 
 
 def divide_and_format(persons, train_ratio=0.7, eval_ratio=0.2):
+    """
+    Divides human trajectories into train, eval and test.
+    """
     assert(train_ratio + eval_ratio <= 1.0)
 
     # divide human paths into train, eval and test
@@ -248,7 +264,7 @@ def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
     df['y'] = df['y'] / config.SCALING_FACTOR
     # print(df.dtypes)
 
-    persons, max_vals = generate_sequences(df)
+    persons = generate_sequences(df)
 
     # plt.hist(max_vals)
     # plt.show()
