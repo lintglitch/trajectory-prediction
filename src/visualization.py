@@ -122,21 +122,23 @@ def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_
     ax.yaxis.grid(True)
 
     # draw past path
-    ax.plot(x_xvals, x_yvals, 'b', label='Past')
-    # draw ground-truth path
-    ax.plot(gt_xvals, gt_yvals, 'g', label='Ground-truth')
+    past_path, = ax.plot(x_xvals, x_yvals, 'b', label='Past')
 
     # given the prediction model generate a prediction and draw it
+    prediction_path = None
     if predictions is not None:
         for prediction in predictions:
             # prediction = model_interface.predict_once(prediction_model, x, goal=goal)
             # TODO, slightly change color
             px = prediction[:,0]
             py = prediction[:,1]
-            ax.plot(px, py, 'r', label='Prediction')
+            prediction_path, = ax.plot(px, py, 'r', label='Prediction')
 
     # mark current position
     ax.plot(current_x, current_y, 'bo', label='Current position')
+
+    # draw ground-truth path
+    gt_path, = ax.plot(gt_xvals, gt_yvals, 'g', label='Ground-truth')
 
     if name is not None:
         plt.title(name)
@@ -145,12 +147,16 @@ def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_
     plt.ylim([-1.2, 1.2])
 
     if legend:
-        ax.legend()
+        legend_handles = [past_path, gt_path]
+        if prediction_path is not None:
+            legend_handles.append(prediction_path)
+
+        ax.legend(handles=legend_handles)
 
     plt.show()
 
 
-def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, skip=0, rnd=False, name="path"):
+def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, skip=0, rnd=False, samples=1, name="path"):
     """
     Draws multiple predictions.
     Arguments:
@@ -161,6 +167,7 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
         n - number of plots to generate
         skip - skip this number of batches, makes no sense together with rnd
         rnd - wether the batch should be chosen randomly
+        samples - number of prediction that should be made, should be 1 for deterministic models
         name - what to name the plots
     """
     assert(x.shape[0] == ground_truth.shape[0])
@@ -189,6 +196,9 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
 
         predictions = None
         if prediction_model:
-            predictions = [prediction_model.predict_once(x_batch, goal=goal_batch)]
+            if samples <= 1:
+                predictions = [prediction_model.predict_once(x_batch, goal=goal_batch)]
+            else:
+                predictions = prediction_model.prediction_sampling(x_batch, samples=samples, goal=goal_batch)
 
         draw_path(x_batch, gt_batch, goal=goal_batch, predictions=predictions, name=plot_name)

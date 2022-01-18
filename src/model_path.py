@@ -101,6 +101,9 @@ class ModelPath(model.ModelBase):
         for _ in range(samples):
             predictions.append(self.predict_once(x, goal=goal))
         
+        # epistemic uncertainty
+        print(predictions)
+
         # TODO: uncertainty
         # epistemic is just std, but how handle multiple?
 
