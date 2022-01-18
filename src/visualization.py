@@ -59,7 +59,7 @@ def draw_input_path(x, y, goal_pos, goal_index):
     plt.show()
 
 
-def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_percent = 0.05):
+def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_percent=0.05, legend=True):
     """
     Draws generated prediction.
 
@@ -70,6 +70,7 @@ def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_
         goal: prediction of the pedestrian goal
         name: title of the output plot
         min_goal_percent: min goal percentage that still gets displayed
+        legend: should a legend be created
 
     Output
         blue: input
@@ -120,10 +121,10 @@ def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
 
-    # draw prior path
-    ax.plot(x_xvals, x_yvals, 'b')
+    # draw past path
+    ax.plot(x_xvals, x_yvals, 'b', label='Past')
     # draw ground-truth path
-    ax.plot(gt_xvals, gt_yvals, 'r')
+    ax.plot(gt_xvals, gt_yvals, 'g', label='Ground-truth')
 
     # given the prediction model generate a prediction and draw it
     if predictions is not None:
@@ -132,17 +133,20 @@ def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_
             # TODO, slightly change color
             px = prediction[:,0]
             py = prediction[:,1]
-            ax.plot(px, py, 'g')
-        # print(prediction)
+            ax.plot(px, py, 'r', label='Prediction')
 
     # mark current position
-    ax.plot(current_x, current_y, 'bo')
+    ax.plot(current_x, current_y, 'bo', label='Current position')
 
     if name is not None:
         plt.title(name)
 
     plt.xlim([-1.2, 1.2])
     plt.ylim([-1.2, 1.2])
+
+    if legend:
+        ax.legend()
+
     plt.show()
 
 
@@ -185,7 +189,6 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
 
         predictions = None
         if prediction_model:
-            predictions = [ model_interface.predict_once(prediction_model, x_batch, goal=goal_batch) ]
-
+            predictions = [prediction_model.predict_once(x_batch, goal=goal_batch)]
 
         draw_path(x_batch, gt_batch, goal=goal_batch, predictions=predictions, name=plot_name)
