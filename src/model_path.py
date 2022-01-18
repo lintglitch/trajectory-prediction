@@ -95,13 +95,22 @@ class ModelPath(model.ModelBase):
         Makes single prediction multiple times. Useful for non-deterministic models.
         """
 
+        # TODO optimize, instead of concatenating goal multiple times
+
         predictions = []
         for _ in range(samples):
             predictions.append(self.predict_once(x, goal=goal))
         
         # TODO: uncertainty
+        # epistemic is just std, but how handle multiple?
+
+        # you add together the variances, then take root again to get the combined std
 
         return predictions
+    
+
+    def prediction_sampling_and_uncertainty(self, x, samples=100, goal=None):
+        pass
 
 
     def metrics_geometric(self, x, ground_truth, filepath=None, goals=None):

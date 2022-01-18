@@ -40,33 +40,34 @@ def simple_cnn(train_data):
     output_size = config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES
 
     inputs = keras.Input(shape=train_data[0].shape[1:])
-    x = layers.Conv1D(filters=64, kernel_size=3, activation='relu')(inputs)
-    # x = layers.Conv1D(filters=32, kernel_size=3, activation='relu')(x)
-    # x = layers.Conv1D(filters=32, kernel_size=3, activation='relu')(x)
+    x = layers.Conv1D(filters=32, kernel_size=3, activation='relu')(inputs)
     x = layers.MaxPooling1D(pool_size=2)(x)
-    
-    # x = layers.MaxPooling1D(pool_size=2)(x)
+
     x = layers.Flatten()(x)
-    # x = layers.Dense(output_size, activation='relu')(x)
-    x = layers.Dense(output_size)(x)
+    x = layers.Dense(output_size, activation='relu')(x)
+    x = layers.Dense(output_size, activation='tanh')(x)
     outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
     
     model = keras.Model(inputs=inputs, outputs=outputs)
     return model
 
 
-def simple_cnn_dropout(train_data):
+def simple_cnn_dropout(train_data, rate=0.05):
+    output_size = config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES
+
     inputs = keras.Input(shape=train_data[0].shape[1:])
     x = layers.Conv1D(filters=32, kernel_size=3, activation='relu')(inputs)
     x = layers.MaxPooling1D(pool_size=2)(x)
-    x = layers.Dropout(rate=0.2)(x, training=True)
+
     x = layers.Flatten()(x)
-    x = layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES)(x)
+    x = layers.Dropout(rate=rate)(x, training=True)
+    x = layers.Dense(output_size, activation='relu')(x)
+    x = layers.Dropout(rate=rate)(x, training=True)
+    x = layers.Dense(output_size, activation='tanh')(x)
     outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
 
     model = keras.Model(inputs=inputs, outputs=outputs)
     return model
-
     # model = tf.keras.Sequential()
     # model.add(layers.Conv1D(filters=32, kernel_size=3, activation='relu'))
     # model.add(layers.MaxPooling1D(pool_size=2))
