@@ -11,22 +11,20 @@ from src import config
 CONV_WIDTH = 3
 LSTM_DEPTH = 128
 
-# TODO try sigmoid activation function
 
 def simple_lstm(train_data):
     ## simple LSTM (works both for goal or no goal)
     model = tf.keras.Sequential()
     model.add(layers.LSTM(LSTM_DEPTH))
-    # TODO: try sigmoid
     model.add(layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES))
     model.add(layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES]))
     return model
 
 
+# TODO try more complex lstm with dropout
 def simple_lstm_dropout(train_data):
     inputs = keras.Input(shape=train_data[0].shape[1:])
     x = layers.LSTM(LSTM_DEPTH)(inputs)
-    x = layers.MaxPooling1D(pool_size=2)(x)
     x = layers.Dropout(rate=0.2)(x, training=True)
     x = layers.Flatten()(x)
     x = layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES)(x)
@@ -44,7 +42,33 @@ def simple_cnn(train_data):
     x = layers.MaxPooling1D(pool_size=2)(x)
 
     x = layers.Flatten()(x)
-    x = layers.Dense(output_size, activation='relu')(x)
+    x = layers.Dense(output_size, activation='tanh')(x)
+    outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
+    
+    model = keras.Model(inputs=inputs, outputs=outputs)
+    return model
+
+
+# from https://keras.io/examples/timeseries/timeseries_classification_from_scratch/
+def cnn_batchnormalization(train_data):
+    output_size = config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES
+
+    inputs = keras.Input(shape=train_data[0].shape[1:])
+    conv1 = keras.layers.Conv1D(filters=32, kernel_size=3, padding="same")(inputs)
+    conv1 = keras.layers.BatchNormalization()(conv1)
+    conv1 = keras.layers.ReLU()(conv1)
+
+    conv2 = keras.layers.Conv1D(filters=32, kernel_size=3, padding="same")(conv1)
+    conv2 = keras.layers.BatchNormalization()(conv2)
+    conv2 = keras.layers.ReLU()(conv2)
+
+    conv3 = keras.layers.Conv1D(filters=32, kernel_size=3, padding="same")(conv2)
+    conv3 = keras.layers.BatchNormalization()(conv3)
+    conv3 = keras.layers.ReLU()(conv3)
+
+    gap = keras.layers.GlobalAveragePooling1D()(conv3)
+
+    x = layers.Flatten()(gap)
     x = layers.Dense(output_size, activation='tanh')(x)
     outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
     
@@ -60,8 +84,6 @@ def simple_cnn_dropout(train_data, rate=0.05):
     x = layers.MaxPooling1D(pool_size=2)(x)
 
     x = layers.Flatten()(x)
-    x = layers.Dropout(rate=rate)(x, training=True)
-    x = layers.Dense(output_size, activation='relu')(x)
     x = layers.Dropout(rate=rate)(x, training=True)
     x = layers.Dense(output_size, activation='tanh')(x)
     outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)

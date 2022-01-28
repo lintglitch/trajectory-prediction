@@ -1,5 +1,7 @@
+from curses import raw
 import numpy as np
-import statistics
+import json
+import re
 
 from src import config
 from src import util
@@ -52,4 +54,51 @@ def concatenate_x_goal_batch(x, goal):
     return x_combined
 
 
-# def predict_batch(model, x, goal=None):
+def save_history(filename, history):
+    """
+    Takes history object and saves history as a json.
+    """
+    path = f"histories/{filename}.json"
+
+    with open(path, 'w') as f:
+        json_s = json.dumps(history.history)
+        f.write(json_s)
+
+
+def load_history(filename):
+    path = f"histories/{filename}.json"
+
+    history_dict = None
+    with open(path) as f:
+        raw_text = f.read()
+        history_dict = json.loads(raw_text)
+    
+    return history_dict
+
+
+def load_txt_history(filename, is_goal=False):
+    """
+    Generates a history dict from the saved text output.
+
+    Will assume its from path training unless goal set to true
+    """
+    path = f"histories/{filename}.json"
+
+    with open(path) as f:
+        raw_text = f.read()
+    
+    search_vals = None
+    if is_goal:
+        # TODO
+        pass
+    else:
+        search_vals = ['loss', 'mean_absolute_error', 'val_loss', 'val_mean_absolute_error']
+    
+    history_dict = {}
+    for key in search_vals:
+        search_string = f" {key}: ([\d\.]*)"
+        finds = re.findall(search_string, raw_text)
+
+        history_dict[key] = finds
+    
+    return history_dict

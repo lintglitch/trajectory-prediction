@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow.python.keras.engine import training
 import tensorflow.keras as keras
 import statistics
+import os
 
 from src import model
 from src import config
@@ -21,13 +22,15 @@ class ModelPath(model.ModelBase):
         self.uses_goal = uses_goal
         self.model = None
 
+        super().__init__()
 
-    def train(self, model, train_data, eval_data, train_goals=None, eval_goals=None, batch_size=128, epochs=10):
+
+    def train(self, train_data, eval_data, train_goals=None, eval_goals=None, model=None, batch_size=128, epochs=10, checkpoints_path=None):
         """
         Trains the model,
         """
         assert not self.uses_goal or (train_goals is not None and eval_goals is not None)
-        self._init_model_before_training(model)
+        self._init_model_before_training(model, checkpoints_path)
 
         # x is just the past path, without goal
         train_x = train_data[0]
@@ -48,19 +51,39 @@ class ModelPath(model.ModelBase):
         #                                                 patience=patience,
         #                                                 mode='min')
 
-        self.model.compile(loss=tf.losses.MeanSquaredError(),
-                    optimizer=tf.optimizers.Adam(),
-                    metrics=[tf.metrics.MeanAbsoluteError()])
-                    # metrics=[tf.metrics.MeanAbsoluteError()])
 
-        history = self.model.fit(x=train_x, y=train_y, batch_size=batch_size, epochs=epochs, verbose=True,
-                            shuffle=True, validation_data=(eval_x, eval_y)
+
+        # only compile model if we haven't loaded one
+        if not self.loaded_checkpoint:
+            self.model.compile(loss=tf.losses.MeanSquaredError(),
+                        # TODO change learning rate back
+                        optimizer=tf.optimizers.Adam(learning_rate=1e-4),
+                        metrics=[tf.metrics.MeanAbsoluteError()])
+
+
+        # configure checkpoint saving
+        callbacks = None
+        if checkpoints_path is not None:
+            checkpoints = keras.callbacks.ModelCheckpoint(
+                filepath=checkpoints_path,
+                monitor='val_mean_absolute_error',
+                save_best_only=True, 
+                verbose=0,
+                mode='min'
+                )
+            callbacks = [checkpoints]
+
+        history = self.model.fit(
+                            x=train_x,
+                            y=train_y,
+                            batch_size=batch_size,
+                            epochs=epochs,
+                            verbose=True,
+                            shuffle=True,
+                            validation_data=(eval_x, eval_y),
+                            callbacks=callbacks,
                             )
 
-        # history = model.fit(x=train_x, y=train_y, epochs=MAX_EPOCHS,
-        #                     shuffle=True,
-        #                     validation_data=(eval_x, eval_y),
-        #                     callbacks=[early_stopping])
         return history
 
 

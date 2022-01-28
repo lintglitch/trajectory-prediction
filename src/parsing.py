@@ -274,6 +274,41 @@ def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
     return data
 
 
+def save_processed_data(filename, train_data, eval_data, test_data=None):
+    path = f"data_processed/{filename}"
+
+    if test_data is not None:
+        np.savez(path,
+            train_data_0=train_data[0], train_data_1=train_data[1], train_data_2=train_data[2],
+            eval_data_0=eval_data[0], eval_data_1=eval_data[1], eval_data_2=eval_data[2],
+            test_data_0=test_data[0], test_data_1=test_data[1], test_data_2=test_data[2]
+        )
+    else:
+        np.savez(path,
+            train_data_0=train_data[0], train_data_1=train_data[1], train_data_2=train_data[2],
+            eval_data_0=eval_data[0], eval_data_1=eval_data[1], eval_data_2=eval_data[2]
+        )
+
+
+def load_processed_data(filename):
+    """
+    returns (train_data, eval_data, test_data)
+    """
+
+    path = f"data_processed/{filename}.npz"
+    npzfile = np.load(path)
+
+    train_data = [npzfile['train_data_0'], npzfile['train_data_1'], npzfile['train_data_2']]
+    eval_data = [npzfile['eval_data_0'], npzfile['eval_data_1'], npzfile['eval_data_2']]
+
+    # if test_data was generated load it
+    test_data = None
+    if 'test_data_0' in npzfile:
+        test_data = [npzfile['test_data_0'], npzfile['test_data_1'], npzfile['test_data_2']]
+
+    return train_data, eval_data, test_data
+
+
 # frame rate: 30
 def parse_stanford(file_path):
     df = pd.read_csv("video0/annotations.txt", sep=' ', names=["id", "xmin", "ymin", "xmax", "ymax", "frame", "lost", "occluded", "generated", "label"])

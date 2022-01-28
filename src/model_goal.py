@@ -20,6 +20,8 @@ class ModelGoal(model.ModelBase):
         """
         self.model = None
 
+        super().__init__()
+
 
     def train(self, model, train_data, eval_data, batch_size=128, epochs=10):
         self._init_model_before_training(model)
