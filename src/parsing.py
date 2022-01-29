@@ -99,6 +99,7 @@ def generate_sequences(df):
             assert(data[current_pose_index,0] == 0 and data[current_pose_index,1] == 0)
 
             # create number of paths equal to the rotation amount, data augmentation
+            # note that the data is always rotated, this is to make sure there are not preferrential paths
             for _ in range(config.ROTATION_AMOUNT):
                 rotation_angle = random.randrange(0, 359)
 
@@ -175,9 +176,9 @@ def _format_x_y(persons):
         goals_list.extend(person_goals)
         y_poses.extend(person_y_poses)
 
-    x = np.array(x_poses)
-    y = np.array(y_poses)
-    goals = np.array(goals_list)
+    x = np.array(x_poses, dtype='float32')
+    y = np.array(y_poses, dtype='float32')
+    goals = np.array(goals_list, dtype='float32')
     
     return x, goals, y
 
@@ -233,7 +234,7 @@ def divide_and_format(persons, train_ratio=0.7, eval_ratio=0.2):
     return train_data, eval_data, test_data
 
 
-def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
+def parse_atc_day(file_name, train_ratio=0.8, eval_ratio=0.2):
     """
     Parses a single csv atc file, which always represents a day.
     
@@ -246,6 +247,7 @@ def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
         goals - [batches, GOAL_GRID_SIZE**2], its a one hot encoded vector
         y - [batches, OUTPUT_FRAME_NUMBER, 2]
     """
+    file_path = f"data/{file_name}"
 
     df = pd.read_csv(file_path, names=["time", "id", "x", "y", "z", "velocity", "motion_angle", "facing_angle"])
     # print(df.head())
@@ -272,6 +274,35 @@ def parse_atc_day(file_path, train_ratio=0.8, eval_ratio=0.2):
     # return train_data, eval_data, test_data
     data = divide_and_format(persons, train_ratio=train_ratio, eval_ratio=eval_ratio)
     return data
+
+
+def parse_several_atc_days(file_name_list, train_ratio=0.8, eval_ratio=0.2):
+    train_datas = []
+    eval_datas = []
+    test_datas = []
+    for file_name in file_name_list:
+        data = parse_atc_day(file_name, train_ratio=train_ratio, eval_ratio=eval_ratio)
+        train_data, eval_data, test_data = data
+        train_datas.append(train_data)
+        eval_datas.append(eval_data)
+
+        if test_data is not None:
+            test_datas.append(test_data)
+          
+
+    train_data_combined = unite_data(train_datas)
+    eval_data_combined = unite_data(eval_datas)
+    test_data_combined = None
+
+    print("\nCOMBINED STATS:")
+    print("combined train", train_data_combined[0].shape, train_data_combined[0].dtype, train_data_combined[1].shape, train_data_combined[1].dtype, train_data_combined[2].shape, train_data_combined[2].dtype)
+    print("combined eval", eval_data_combined[0].shape, eval_data_combined[0].dtype, eval_data_combined[1].shape, eval_data_combined[1].dtype, eval_data_combined[2].shape, eval_data_combined[2].dtype)
+
+    if test_datas:
+        test_data_combined = unite_data(test_datas)
+        print("combined test", test_data_combined[0].shape, test_data_combined[0].dtype, test_data_combined[1].shape, test_data_combined[1].dtype, test_data_combined[2].shape, test_data_combined[2].dtype)
+
+    return train_data_combined, eval_data_combined, test_data_combined
 
 
 def save_processed_data(filename, train_data, eval_data, test_data=None):
@@ -307,6 +338,55 @@ def load_processed_data(filename):
         test_data = [npzfile['test_data_0'], npzfile['test_data_1'], npzfile['test_data_2']]
 
     return train_data, eval_data, test_data
+    
+
+def unite_data(data_list):
+    """
+    Takes list of (input_paths, goals, output_paths) tuples and combines them into a whole.
+    """
+
+    input_paths = []
+    goals = []
+    output_paths = []
+    for data in data_list:
+        input_paths.append(data[0])
+        goals.append(data[1])
+        output_paths.append(data[2])
+    
+    input_paths_combined = np.concatenate( input_paths )
+    goals_combined = np.concatenate( goals )
+    output_paths_combined = np.concatenate( output_paths )
+
+    return input_paths_combined, goals_combined, output_paths_combined
+
+
+def unite_processed_data(file_name_list):
+    train_datas = []
+    eval_datas = []
+    test_datas = []
+    for file_name in file_name_list:
+        data = load_processed_data(file_name)
+        train_data, eval_data, test_data = data
+        train_datas.append(train_data)
+        eval_datas.append(eval_data)
+
+        if test_data is not None:
+            test_datas.append(test_data)
+          
+
+    train_data_combined = unite_data(train_datas)
+    eval_data_combined = unite_data(eval_datas)
+    test_data_combined = None
+
+    print("\nCOMBINED STATS:")
+    print("combined train", train_data_combined[0].shape, train_data_combined[0].dtype, train_data_combined[1].shape, train_data_combined[1].dtype, train_data_combined[2].shape, train_data_combined[2].dtype)
+    print("combined eval", eval_data_combined[0].shape, eval_data_combined[0].dtype, eval_data_combined[1].shape, eval_data_combined[1].dtype, eval_data_combined[2].shape, eval_data_combined[2].dtype)
+
+    if test_datas:
+        test_data_combined = unite_data(test_datas)
+        print("combined test", test_data_combined[0].shape, test_data_combined[0].dtype, test_data_combined[1].shape, test_data_combined[1].dtype, test_data_combined[2].shape, test_data_combined[2].dtype)
+
+    return train_data_combined, eval_data_combined, test_data_combined
 
 
 # frame rate: 30

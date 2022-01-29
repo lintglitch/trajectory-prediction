@@ -25,7 +25,7 @@ class ModelPath(model.ModelBase):
         super().__init__()
 
 
-    def train(self, train_data, eval_data, train_goals=None, eval_goals=None, model=None, batch_size=128, epochs=10, checkpoints_path=None):
+    def train(self, train_data, eval_data, train_goals=None, eval_goals=None, model=None, batch_size=128, epochs=10, checkpoints_path=None, learning_rate=0.001):
         """
         Trains the model,
         """
@@ -57,7 +57,7 @@ class ModelPath(model.ModelBase):
         if not self.loaded_checkpoint:
             self.model.compile(loss=tf.losses.MeanSquaredError(),
                         # TODO change learning rate back
-                        optimizer=tf.optimizers.Adam(learning_rate=1e-4),
+                        optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
                         metrics=[tf.metrics.MeanAbsoluteError()])
 
 

@@ -77,7 +77,7 @@ def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_block
         x = layers.Dense(dim, activation="relu")(x)
         x = layers.Dropout(mlp_dropout)(x)
 
-    x = layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES, activation='tanh')(x)
+    x = layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES)(x)
     outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
 
     # outputs = layers.Dense(n_classes, activation="softmax")(x)
