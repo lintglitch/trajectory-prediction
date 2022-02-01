@@ -25,7 +25,7 @@ class ModelPath(model.ModelBase):
         super().__init__()
 
 
-    def train(self, train_data, eval_data, train_goals=None, eval_goals=None, model=None, batch_size=128, epochs=10, checkpoints_path=None, learning_rate=0.001):
+    def train(self, train_data, eval_data, train_goals=None, eval_goals=None, model=None, batch_size=128, epochs=10, checkpoints_path=None, learning_rate=0.001, learning_rate_scheduler=False):
         """
         Trains the model,
         """
@@ -56,7 +56,6 @@ class ModelPath(model.ModelBase):
         # only compile model if we haven't loaded one
         if not self.loaded_checkpoint:
             self.model.compile(loss=tf.losses.MeanSquaredError(),
-                        # TODO change learning rate back
                         optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
                         metrics=[tf.metrics.MeanAbsoluteError()])
 
@@ -72,6 +71,10 @@ class ModelPath(model.ModelBase):
                 mode='min'
                 )
             callbacks = [checkpoints]
+
+        # adds the learning rate scheduler with warm up
+        if learning_rate_scheduler:
+            callbacks += [keras.callbacks.LearningRateScheduler(lr_fast_slow, verbose=1)]
 
         history = self.model.fit(
                             x=train_x,
@@ -205,3 +208,23 @@ class ModelPath(model.ModelBase):
         extended_x = model_interface.concatenate_x_goal(x, goals)
 
         return extended_x
+
+
+def lr_scheduler(epoch, lr, warmup_epochs=3, decay_epochs=30, initial_lr=1e-6, base_lr=1e-3, min_lr=5e-5):
+    if epoch <= warmup_epochs:
+        pct = epoch / warmup_epochs
+        return ( (base_lr - initial_lr) * pct ) + initial_lr
+
+    if epoch > warmup_epochs and epoch < warmup_epochs+decay_epochs:
+        pct = 1 - ( (epoch - warmup_epochs) / decay_epochs )
+        return ( (base_lr - min_lr) * pct ) + min_lr
+
+    return min_lr
+
+
+def lr_fast_slow(epoch, lr, warmup_epochs=20, base_lr=1e-4, fast_lr=1e-3):
+    # start slow for warm up
+    if epoch <= warmup_epochs:
+        return fast_lr
+    
+    return base_lr

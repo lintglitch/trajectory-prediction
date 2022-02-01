@@ -19,12 +19,11 @@ class ModelGoal(model.ModelBase):
             train_data - for infering the correct input shape
         """
         self.model = None
-
         super().__init__()
 
 
-    def train(self, model, train_data, eval_data, batch_size=128, epochs=10):
-        self._init_model_before_training(model)
+    def train(self, train_data, eval_data, batch_size=128, epochs=10, checkpoints_path=None, model=None, learning_rate=0.001):
+        self._init_model_before_training(model, checkpoints_path)
 
         # use past path as input
         train_x = train_data[0]
@@ -34,22 +33,39 @@ class ModelGoal(model.ModelBase):
         train_y = train_data[1]
         eval_y = eval_data[1]
 
-        self.model.compile(loss='categorical_crossentropy',
-                    optimizer=tf.optimizers.Adam(),
-                    metrics=[tf.keras.metrics.CategoricalAccuracy()])
-                    # metrics=[tf.metrics.MeanAbsoluteError()])
 
-    #     hist = self.model.fit(x_train, y_train, batch_size=self.batch_size, epochs=self.nb_epochs, shuffle=True,
-    #                             verbose=True, validation_data=(x_val, y_val), callbacks=self.callbacks)
+        if not self.loaded_checkpoint:
+            self.model.compile(loss='categorical_crossentropy',
+                        optimizer=tf.optimizers.Adam(learning_rate=learning_rate),
+                        metrics=[tf.keras.metrics.CategoricalAccuracy()])
 
-        reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.5, patience=50,
-                                                      min_lr=0.0001)
-        callbacks = [reduce_lr]
 
-        history = self.model.fit(x=train_x, y=train_y, batch_size=batch_size, epochs=epochs, verbose=True,
-                            shuffle=True, validation_data=(eval_x, eval_y),
-                            callbacks=callbacks
-                            )
+        # configure checkpoint saving
+        callbacks = None
+        if checkpoints_path is not None:
+            checkpoints = keras.callbacks.ModelCheckpoint(
+                filepath=checkpoints_path,
+                monitor='val_categorical_accuracy',
+                save_best_only=True, 
+                verbose=0,
+                mode='max'
+                )
+            callbacks = [checkpoints]
+
+        # reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.5, patience=50,
+        #                                               min_lr=0.0001)
+        # callbacks = [reduce_lr]
+
+        history = self.model.fit(
+            x=train_x,
+            y=train_y,
+            batch_size=batch_size,
+            epochs=epochs,
+            verbose=True,
+            shuffle=True,
+            validation_data=(eval_x, eval_y),
+            callbacks=callbacks
+        )
 
         return history
     

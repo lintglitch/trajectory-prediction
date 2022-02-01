@@ -205,12 +205,12 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
         draw_path(x_batch, gt_batch, goal=goal_batch, predictions=predictions, name=plot_name)
 
 
-def draw_losses(loss_key, y_label, history_dicts, names, graph_name=None, save_file=None):
+def draw_histories(history_key, y_label, history_dicts, names, graph_name=None, save_file=None, max_x=None):
     """
     Draws the loss of one or several history files.
 
     Arguments:
-        loss_key - key for the loss function
+        history_key - key for the loss function
         y_label - name of the y axis label
         history_dicts - list of history dicts
         names - the names for the graph
@@ -223,7 +223,7 @@ def draw_losses(loss_key, y_label, history_dicts, names, graph_name=None, save_f
     ax.yaxis.grid(True)
 
     for history_dict, name in zip(history_dicts, names):
-        data = history_dict[loss_key]
+        data = history_dict[history_key]
 
         # so we start from epoch one add one more data point at the start
         data.insert(0, data[0])
@@ -233,7 +233,10 @@ def draw_losses(loss_key, y_label, history_dicts, names, graph_name=None, save_f
     if graph_name:
         plt.title(graph_name)
     
-    plt.xlim(xmin=1)
+    plt.xlim(left=1)
+    if max_x:
+        plt.xlim(right=max_x)
+        
     plt.xlabel('epoch')
     plt.ylabel(y_label)
 

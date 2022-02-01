@@ -28,6 +28,10 @@ class InceptionTime():
         model = self._build_model(input_shape, number_output_classes)
         model.summary()
         return model
+    
+
+    def build_path(self, input_shape):
+        pass
 
 
     # def fit(self, x_train, y_train, x_val, y_val, name='model'):

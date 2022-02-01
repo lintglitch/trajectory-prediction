@@ -37,11 +37,16 @@ The projection layers are implemented through `keras.layers.Conv1D`.
 """
 
 
-def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0):
+# encoders
+def attention_block(inputs, head_size, num_heads, ff_dim=None, dropout=0):
+    if ff_dim is None:
+        ff_dim = head_size
+
     # Attention and Normalization
     x = layers.MultiHeadAttention(
         key_dim=head_size, num_heads=num_heads, dropout=dropout
     )(inputs, inputs)
+
     x = layers.Dropout(dropout)(x)
     x = layers.LayerNormalization(epsilon=1e-6)(x)
     res = x + inputs
@@ -69,15 +74,22 @@ this example, a `GlobalAveragePooling1D` layer is sufficient.
 def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, dropout=0, mlp_dropout=0):
     inputs = keras.Input(shape=input_shape)
     x = inputs
-    for _ in range(num_transformer_blocks):
-        x = transformer_encoder(x, head_size, num_heads, ff_dim, dropout)
 
+    # stack attention blocks
+    for _ in range(num_transformer_blocks):
+        x = attention_block(x, head_size, num_heads, ff_dim, dropout)
+
+    # TODO test if necessary
     x = layers.GlobalAveragePooling1D(data_format="channels_first")(x)
-    for dim in mlp_units:
-        x = layers.Dense(dim, activation="relu")(x)
+
+    output_size = config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES
+
+    # add a couple of heads
+    for _ in range(mlp_units):
+        x = layers.Dense(output_size, activation="relu")(x)
         x = layers.Dropout(mlp_dropout)(x)
 
-    x = layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES)(x)
+    x = layers.Dense(output_size)(x)
     outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
 
     # outputs = layers.Dense(n_classes, activation="softmax")(x)
