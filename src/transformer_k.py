@@ -65,7 +65,10 @@ SKIP_CONNECTION_STRENGTH = 0.9
 
 
 
-def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, dropout=0, mlp_dropout=0, time2vec_dim = 3):
+def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, dropout=0, mlp_dropout=0, time2vec_dim=3):
+    """
+    Builds a forecasting model.
+    """
     inp = layers.Input(input_shape)
     x = inp
 

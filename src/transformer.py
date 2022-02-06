@@ -1,40 +1,12 @@
-# modified from: https://github.com/keras-team/keras-io/blob/master/examples/timeseries/timeseries_classification_transformer.py
+# modified from: https://keras.io/examples/timeseries/timeseries_classification_transformer/
 # based on [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
 import numpy as np
 from tensorflow import keras
 from tensorflow.keras import layers
 from src import config
 
-
-
-"""
-## Introduction
-This is the Transformer architecture from
-[Attention Is All You Need](https://arxiv.org/abs/1706.03762),
-applied to timeseries instead of natural language.
-This example requires TensorFlow 2.4 or higher.
-## Load the dataset
-We are going to use the same dataset and preprocessing as the
-[TimeSeries Classification from Scratch](https://keras.io/examples/timeseries/timeseries_classification_from_scratch)
-example.
-"""
-
-
-
-"""
-## Build the model
-Our model processes a tensor of shape `(batch size, sequence length, features)`,
-where `sequence length` is the number of time steps and `features` is each input
-timeseries.
-"""
-
-
-
-"""
-We include residual connections, layer normalization, and dropout.
-The resulting layer can be stacked multiple times.
-The projection layers are implemented through `keras.layers.Conv1D`.
-"""
+# this is a transformer classifier
+# see transformer forecaster for comparison
 
 
 # encoders
@@ -59,19 +31,7 @@ def attention_block(inputs, head_size, num_heads, ff_dim=None, dropout=0):
     return x + res
 
 
-"""
-The main part of our model is now complete. We can stack multiple of those
-`transformer_encoder` blocks and we can also proceed to add the final
-Multi-Layer Perceptron classification head. Apart from a stack of `Dense`
-layers, we need to reduce the output tensor of the `TransformerEncoder` part of
-our model down to a vector of features for each data point in the current
-batch. A common way to achieve this is to use a pooling layer. For
-this example, a `GlobalAveragePooling1D` layer is sufficient.
-"""
-
-# n_classes = len(np.unique(y_train))
-
-def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, dropout=0, mlp_dropout=0):
+def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, mlp_size, n_classes, dropout=0, mlp_dropout=0):
     inputs = keras.Input(shape=input_shape)
     x = inputs
 
@@ -79,20 +39,14 @@ def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_block
     for _ in range(num_transformer_blocks):
         x = attention_block(x, head_size, num_heads, ff_dim, dropout)
 
-    # TODO test if necessary
     x = layers.GlobalAveragePooling1D(data_format="channels_first")(x)
-
-    output_size = config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES
 
     # add a couple of heads
     for _ in range(mlp_units):
-        x = layers.Dense(output_size, activation="relu")(x)
+        x = layers.Dense(mlp_size, activation="relu")(x)
         x = layers.Dropout(mlp_dropout)(x)
-
-    x = layers.Dense(output_size)(x)
-    outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
-
-    # outputs = layers.Dense(n_classes, activation="softmax")(x)
+    
+    outputs = layers.Dense(n_classes, activation="softmax")(x)
     return keras.Model(inputs, outputs)
 
 
