@@ -222,7 +222,14 @@ def draw_histories(history_key, y_label, history_dicts, names, graph_name=None, 
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
 
+
+
     for history_dict, name in zip(history_dicts, names):
+        if history_key not in history_dict:
+            print(f"{history_key} not in {name}")
+            print(history_dict)
+            continue
+
         data = history_dict[history_key]
 
         # so we start from epoch one add one more data point at the start
@@ -243,6 +250,6 @@ def draw_histories(history_key, y_label, history_dicts, names, graph_name=None, 
     ax.legend()
 
     if save_file is not None:
-        plt.savefig(f"{save_file}.pdf")
+        plt.savefig(f"figures/{save_file}.pdf")
 
     plt.show()

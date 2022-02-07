@@ -2,6 +2,7 @@ from curses import raw
 import numpy as np
 import json
 import re
+import os
 
 from src import config
 from src import util
@@ -65,32 +66,41 @@ def save_history(filename, history):
         f.write(json_s)
 
 
-def load_history(filename):
-    path = f"histories/{filename}.json"
+def load_history(filename, is_goal=False):
+    """
+    Loads history json or txt file.
+
+    Inputs:
+        filename - filename under histories folder
+        is_goal - bool, should be true if goal predictor history
+    """
+    path_json = f"histories/{filename}.json"
+    path_txt = f"histories/{filename}.txt"
 
     history_dict = None
-    with open(path) as f:
-        raw_text = f.read()
-        history_dict = json.loads(raw_text)
+    if os.path.exists(path_json):
+        with open(path_json) as f:
+            raw_text = f.read()
+            history_dict = json.loads(raw_text)
+    else:
+        history_dict = _load_txt_history(path_txt, is_goal=is_goal)
     
     return history_dict
 
 
-def load_txt_history(filename, is_goal=False):
+def _load_txt_history(path, is_goal=False):
     """
     Generates a history dict from the saved text output.
 
     Will assume its from path training unless goal set to true
     """
-    path = f"histories/{filename}.json"
 
     with open(path) as f:
         raw_text = f.read()
     
     search_vals = None
     if is_goal:
-        # TODO
-        pass
+        search_vals = ['loss', 'categorical_accuracy', 'val_loss', 'val_categorical_accuracy']
     else:
         search_vals = ['loss', 'mean_absolute_error', 'val_loss', 'val_mean_absolute_error']
     
@@ -98,7 +108,8 @@ def load_txt_history(filename, is_goal=False):
     for key in search_vals:
         search_string = f" {key}: ([\d\.]*)"
         finds = re.findall(search_string, raw_text)
+        finds_float = [float(x) for x in finds]
 
-        history_dict[key] = finds
+        history_dict[key] = finds_float
     
     return history_dict
