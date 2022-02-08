@@ -222,7 +222,7 @@ def lr_scheduler(epoch, lr, warmup_epochs=3, decay_epochs=30, initial_lr=1e-6, b
     return min_lr
 
 
-def lr_fast_slow(epoch, lr, warmup_epochs=20, base_lr=1e-4, fast_lr=1e-3):
+def lr_fast_slow(epoch, lr, warmup_epochs=5, base_lr=1e-4, fast_lr=1e-3):
     # start slow for warm up
     if epoch <= warmup_epochs:
         return fast_lr

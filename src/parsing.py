@@ -321,8 +321,10 @@ def save_processed_data(filename, train_data, eval_data, test_data=None):
         )
 
 
-def load_processed_data(filename):
+def load_processed_data(filename, ratio=1.0):
     """
+    If ratio is given will not load complete data but subset
+
     returns (train_data, eval_data, test_data)
     """
 
@@ -336,6 +338,13 @@ def load_processed_data(filename):
     test_data = None
     if 'test_data_0' in npzfile:
         test_data = [npzfile['test_data_0'], npzfile['test_data_1'], npzfile['test_data_2']]
+    
+    if ratio < 1:
+        limit = int(train_data[0].shape[0] * ratio)
+        train_data = (train_data[0][:limit].copy(), train_data[1][:limit].copy(), train_data[2][:limit].copy())
+
+        limit = int(eval_data[0].shape[0] * ratio)
+        eval_data = (eval_data[0][:limit].copy(), eval_data[1][:limit].copy(), eval_data[2][:limit].copy())
 
     return train_data, eval_data, test_data
     

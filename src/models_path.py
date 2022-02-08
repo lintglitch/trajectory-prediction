@@ -36,13 +36,21 @@ def simple_lstm_dropout(train_data):
     return model
 
 
-def simple_cnn(train_data):
-    inputs = keras.Input(shape=train_data[0].shape[1:])
-    x = layers.Conv1D(filters=32, kernel_size=3, activation='relu')(inputs)
+def simple_cnn(input_shape, use_dropout=False, dropout_rate=0.2):
+    inputs = keras.Input(shape=input_shape)
+    x = layers.Conv1D(filters=64, kernel_size=3, activation='relu')(inputs)
     x = layers.MaxPooling1D(pool_size=2)(x)
 
+    if use_dropout:
+        x = layers.Dropout(rate=dropout_rate)(x, training=True)
+
     x = layers.Flatten()(x)
-    x = layers.Dense(OUTPUT_SIZE, activation='tanh')(x)
+    x = layers.Dense(4 * OUTPUT_SIZE)(x)
+
+    if use_dropout:
+        x = layers.Dropout(rate=dropout_rate)(x, training=True)
+
+    x = layers.Dense(OUTPUT_SIZE)(x)
     outputs = layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES])(x)
     
     model = keras.Model(inputs=inputs, outputs=outputs)

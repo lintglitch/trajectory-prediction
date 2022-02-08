@@ -62,7 +62,12 @@ def save_history(filename, history):
     path = f"histories/{filename}.json"
 
     with open(path, 'w') as f:
-        json_s = json.dumps(history.history)
+        # do some type conversion, otherwise fails for lr
+        save_dict = {}
+        for key, value in history.history.items():
+            save_dict[key] = [float(x) for x in value]
+
+        json_s = json.dumps(save_dict)
         f.write(json_s)
 
 

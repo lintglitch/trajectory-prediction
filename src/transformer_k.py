@@ -8,7 +8,7 @@ import tensorflow.keras.backend as K
 from src import config
 
 class TransformerBlock(layers.Layer):
-    def __init__(self, head_size, feat_dim, num_heads, ff_dim, rate = 0.1):
+    def __init__(self, head_size, feat_dim, num_heads, ff_dim, rate = 0.1, bayesian_dropout=False):
         super(TransformerBlock, self).__init__()
         self.att = layers.MultiHeadAttention(num_heads = num_heads, key_dim = head_size)
         self.ffn = keras.Sequential( [layers.Dense(ff_dim, activation = "gelu"), layers.Dense(feat_dim),] )
@@ -16,13 +16,19 @@ class TransformerBlock(layers.Layer):
         self.layernorm2 = layers.BatchNormalization()
         self.dropout1 = layers.Dropout(rate)
         self.dropout2 = layers.Dropout(rate)
+        self.bayesian_dropout = True
 
     def call(self, inputs, training):
+        # overwrite dropout setting if bayesian dropout
+        dropout_active = training
+        if self.bayesian_dropout:
+            dropout_active = True
+
         attn_output = self.att(inputs, inputs)
-        attn_output = self.dropout1(attn_output, training = training)
+        attn_output = self.dropout1(attn_output, training = dropout_active)
         out1 = self.layernorm1(inputs + attn_output)
         ffn_output = self.ffn(out1)
-        ffn_output = self.dropout2(ffn_output, training = training)
+        ffn_output = self.dropout2(ffn_output, training = dropout_active)
         return self.layernorm2(out1 + ffn_output)
 
 
@@ -65,7 +71,7 @@ SKIP_CONNECTION_STRENGTH = 0.9
 
 
 
-def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, dropout=0, mlp_dropout=0, time2vec_dim=3):
+def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, dropout=0, mlp_dropout=0, time2vec_dim=3, bayesian_dropout=False):
     """
     Builds a forecasting model.
     """
@@ -78,7 +84,7 @@ def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_block
 
     for k in range(num_transformer_blocks):
         x_old = x
-        transformer_block = TransformerBlock(head_size, input_shape[-1] + ( input_shape[-1] * time2vec_dim), num_heads, ff_dim, dropout)
+        transformer_block = TransformerBlock(head_size, input_shape[-1] + ( input_shape[-1] * time2vec_dim), num_heads, ff_dim, dropout, bayesian_dropout=bayesian_dropout)
         x = transformer_block(x)
         x = ((1.0 - SKIP_CONNECTION_STRENGTH) * x) + (SKIP_CONNECTION_STRENGTH * x_old)
 
@@ -88,7 +94,7 @@ def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_block
     # add a couple of heads
     for _ in range(mlp_units):
         x = layers.Dense(8 * output_size, activation="selu")(x)
-        x = layers.Dropout(mlp_dropout)(x)
+        x = layers.Dropout(mlp_dropout)(x, training=bayesian_dropout)
     
     x = layers.Dense(output_size, activation = 'linear')(x)
 
