@@ -13,3 +13,4 @@ histories/
 figures/
 checkpoints/
 *.pdf
+*.shelve

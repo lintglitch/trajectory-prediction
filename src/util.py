@@ -20,75 +20,78 @@ def rotate_array(p, origin=(0, 0), degrees=0):
 
 # ADE/MDE
 def average_displacement_error(ground_truth, prediction):
-    batches = prediction.shape[0]
-    prediction_length = prediction.shape[1]
+    """
+    Calculates ADE for a single input / prediction example.
+    """
+    length = ground_truth.shape[0]
+    assert length == prediction.shape[0]
+
     errors = []
-    for b in range(batches):
-        batch_error = []
-        for t in range(prediction_length):
-            error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
-            batch_error.append(error)
-        
-        errors.append(statistics.mean(batch_error))
-    return errors
+    for t in range(length):
+        error = scipy.spatial.distance.euclidean(ground_truth[t], prediction[t])
+        errors.append(error)
+    
+    ade = statistics.mean(errors)
+    return ade
 
 
 # FDE
 def final_displacement_error(ground_truth, prediction):
-    batches = prediction.shape[0]
-    assert ground_truth.shape[1] == prediction.shape[1]
-    errors = []
-    for b in range(batches):
-        t = -1
-        error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
-        errors.append(error)      
-    return errors
+    assert ground_truth.shape[0] == prediction.shape[0]
+    return scipy.spatial.distance.euclidean(ground_truth[-1], prediction[-1])
 
 
 # mADE
 def minimum_average_displacement_error(ground_truth, prediction_distribution):
     """
     Calculates for every time step the minimum displacement error between the ground truth position
-    and the closest of the prediction positions.
+    and the closest of the prediction positions for a single example.
     """
-    batches = prediction_distribution[0].shape[0]
-    prediction_length = prediction_distribution[0].shape[1]
+    length = ground_truth.shape[0]
+
     errors = []
-    for b in range(batches):
-        batch_error = []
-        for t in range(prediction_length):
-            
-            # add the smallest distance for this time step within the samples
-            time_step_errors = []
-            for prediction in prediction_distribution:
-                error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
+    for t in range(length):
+        time_step_errors = []
+        for prediction in prediction_distribution:
+                error = scipy.spatial.distance.euclidean(ground_truth[t], prediction[t])
                 time_step_errors.append(error)
-            
-            batch_error.append(min(time_step_errors))
         
-        errors.append(statistics.mean(batch_error))
-    return errors
+        errors.append(min(time_step_errors))
+        
+    m_ade = statistics.mean(errors)
+    return m_ade
 
 
 # mFDE
 def minimum_final_displacement_error(ground_truth, prediction_distribution):
-    batches = prediction_distribution[0].shape[0]
-    prediction_length = prediction_distribution[0].shape[1]
+    length = ground_truth.shape[0]
+
     errors = []
-    for b in range(batches):
-        t = -1
-
-        # add the smallest distance for this time step within the samples
-        time_step_errors = []
-        for prediction in prediction_distribution:
-            error = scipy.spatial.distance.euclidean(ground_truth[b,t], prediction[b,t])
-            time_step_errors.append(error)
-
-        errors.append(min(time_step_errors))      
-    return errors
+    t = -1
+    for prediction in prediction_distribution:
+            error = scipy.spatial.distance.euclidean(ground_truth[t], prediction[t])
+            errors.append(error)
+           
+    m_fde = min(errors)
+    return m_fde
 
 
-# Kullback-Leibler divergence
+def epistemic_uncertainty_path(predictions):
+    unified = np.array(predictions)
+    output_time_steps = unified.shape[1]
+
+    arr_total_var = []
+    for time_step in range(output_time_steps):
+        # calculate variances for x and y for every time step
+        x_var = unified[:, time_step, 0].var()
+        y_var = unified[:, time_step, 1].var()
+
+        # since x and y are independent random variables, just sum them to get the total
+        total_var = x_var + y_var
+        arr_total_var.append(total_var)
+
+    arr_total_std = np.sqrt(arr_total_var)
+    return arr_total_std
 
 
 def get_goal_index(position):

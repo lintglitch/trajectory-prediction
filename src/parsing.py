@@ -362,9 +362,9 @@ def unite_data(data_list):
         goals.append(data[1])
         output_paths.append(data[2])
     
-    input_paths_combined = np.concatenate( input_paths )
-    goals_combined = np.concatenate( goals )
-    output_paths_combined = np.concatenate( output_paths )
+    input_paths_combined = np.concatenate( input_paths.copy() )
+    goals_combined = np.concatenate( goals.copy() )
+    output_paths_combined = np.concatenate( output_paths.copy() )
 
     return input_paths_combined, goals_combined, output_paths_combined
 

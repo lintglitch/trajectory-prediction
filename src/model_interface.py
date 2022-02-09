@@ -1,4 +1,3 @@
-from curses import raw
 import numpy as np
 import json
 import re
@@ -118,3 +117,14 @@ def _load_txt_history(path, is_goal=False):
         history_dict[key] = finds_float
     
     return history_dict
+
+
+def w_a(a, b, w, rs=0):
+    b2 = []
+    for e in b:
+        r = (a + w * e) / (w + 1)
+        if rs > 0:
+            r2 = np.random.rand( a.shape[0], a.shape[1] ) / rs
+            r = r + r2
+        b2.append(r)
+    return b2

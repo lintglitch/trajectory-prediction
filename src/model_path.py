@@ -121,28 +121,37 @@ class ModelPath(model.ModelBase):
         Makes single prediction multiple times. Useful for non-deterministic models.
         """
 
-        # TODO optimize, instead of concatenating goal multiple times
+        input_x = x
+        # extend input if goals are used
+
+        if goal is not None:
+            input_x = model_interface.concatenate_x_goal_batch(input_x, goal)
+        
+        # add batch dimension
+        input_x = np.expand_dims(input_x, axis=0)
 
         predictions = []
         for _ in range(samples):
-            predictions.append(self.predict_once(x, goal=goal))
-        
-        # epistemic uncertainty
-        print(predictions)
-
-        # TODO: uncertainty
-        # epistemic is just std, but how handle multiple?
-
-        # you add together the variances, then take root again to get the combined std
+            predictions.append(self.model(input_x)[0])
 
         return predictions
     
 
-    def prediction_sampling_and_uncertainty(self, x, samples=100, goal=None):
-        pass
+    def metrics_geometric(self, x, ground_truth, goal=None):
+        """
+        Calculates metrics for the entire dataset.
+            x - input path
+            ground_truth - actual path taken by the pedestrian
+            goals - pedestrian goal input, necessary for models that use the goal
+        """
+        prediction = self.predict_once(x, goal=goal)
+        ade = util.average_displacement_error(ground_truth, prediction)
+        fde = util.final_displacement_error(ground_truth, prediction)
 
+        return ade, fde
+    
 
-    def metrics_geometric(self, x, ground_truth, filepath=None, goals=None):
+    def metrics_probabilistic(self, x, ground_truth, samples=100, goal=None):
         """
         Calculates metrics for the entire dataset.
             x - input path
@@ -150,54 +159,14 @@ class ModelPath(model.ModelBase):
             filepath - if given will save as csv
             goals - pedestrian goal input, necessary for models that use the goal
         """
-        input_x = x
-        # extend input if goals are used
-        if self.uses_goal:
-            input_x = self._setup_goal_input(x, goals)
 
-        predictions = self.model(input_x)
-        mde_distances = util.average_displacement_error(ground_truth, predictions)
-        fde_distances = util.final_displacement_error(ground_truth, predictions)
+        predictions = self.prediction_sampling(x, samples=samples, goal=goal)
 
-        if filepath:
-            util.save_array_to_file(filepath + '_ADE.csv', mde_distances)
-            util.save_array_to_file(filepath + '_FDE.csv', fde_distances)
+        m_ade = util.minimum_average_displacement_error(ground_truth, predictions)
+        m_fde = util.minimum_final_displacement_error(ground_truth, predictions)
 
-        mde_mean = statistics.mean(mde_distances)
-        fde_mean = statistics.mean(fde_distances)
-        print(f"ADE mean: {mde_mean}")
-        print(f"FDE mean: {fde_mean}")
-    
+        return m_ade, m_fde
 
-    def metrics_probabilistic(self, x, ground_truth, samples=100, filepath=None, goals=None):
-        """
-        Calculates metrics for the entire dataset.
-            x - input path
-            ground_truth - actual path taken by the pedestrian
-            filepath - if given will save as csv
-            goals - pedestrian goal input, necessary for models that use the goal
-        """
-        input_x = x
-        # extend input if goals are used
-        if self.uses_goal:
-            input_x = self._setup_goal_input(x, goals)
-
-        predictions = []
-        for _ in range(samples):
-            predictions.append(self.model(input_x))
-
-        mde_distances = util.minimum_average_displacement_error(ground_truth, predictions)
-        fde_distances = util.minimum_final_displacement_error(ground_truth, predictions)
-
-        if filepath:
-            util.save_array_to_file(filepath + '_mADE.csv', mde_distances)
-            util.save_array_to_file(filepath + '_mFDE.csv', fde_distances)
-
-        mde_mean = statistics.mean(mde_distances)
-        fde_mean = statistics.mean(fde_distances)
-        print(f"mADE mean: {mde_mean}")
-        print(f"mFDE mean: {fde_mean}")
-    
 
     def _setup_goal_input(self, x, goals):
         if goals is None:
@@ -222,7 +191,7 @@ def lr_scheduler(epoch, lr, warmup_epochs=3, decay_epochs=30, initial_lr=1e-6, b
     return min_lr
 
 
-def lr_fast_slow(epoch, lr, warmup_epochs=5, base_lr=1e-4, fast_lr=1e-3):
+def lr_fast_slow(epoch, lr, warmup_epochs=10, base_lr=1e-4, fast_lr=1e-3):
     # start slow for warm up
     if epoch <= warmup_epochs:
         return fast_lr

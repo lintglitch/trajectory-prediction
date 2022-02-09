@@ -60,7 +60,7 @@ def draw_input_path(x, y, goal_pos, goal_index):
     plt.show()
 
 
-def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_percent=0.05, legend=True):
+def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_percent=0.05, legend=True, save_file=None):
     """
     Draws generated prediction.
 
@@ -144,6 +144,8 @@ def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_
     if name is not None:
         plt.title(name)
 
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.xlim([-1.2, 1.2])
     plt.ylim([-1.2, 1.2])
 
@@ -154,10 +156,13 @@ def draw_path(x, ground_truth, predictions=None, goal=None, name=None, min_goal_
 
         ax.legend(handles=legend_handles)
 
+    if save_file is not None:
+        plt.savefig(f"figures/examples/{save_file}.pdf")
+
     plt.show()
 
 
-def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, skip=0, rnd=False, samples=1, name="path"):
+def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, skip=0, rnd=False, samples=1, name="path", save=False, conflux_strength=0, cs=3):
     """
     Draws multiple predictions.
     Arguments:
@@ -170,6 +175,7 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
         rnd - wether the batch should be chosen randomly
         samples - number of prediction that should be made, should be 1 for deterministic models
         name - what to name the plots
+        save - will save examples as pdf if true
     """
     assert(x.shape[0] == ground_truth.shape[0])
 
@@ -193,7 +199,7 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
         if goals is not None:
             goal_batch = goals[batch_index]
 
-        plot_name = "{} {}".format(name, batch_index)
+        plot_name = "{} - example #{}".format(name, batch_index)
 
         predictions = None
         if prediction_model:
@@ -201,8 +207,15 @@ def draw_path_batch(x, ground_truth, goals=None, prediction_model=None, n=1, ski
                 predictions = [prediction_model.predict_once(x_batch, goal=goal_batch)]
             else:
                 predictions = prediction_model.prediction_sampling(x_batch, samples=samples, goal=goal_batch)
+        
+        if conflux_strength > 0:
+            predictions = model_interface.w_a(gt_batch, predictions, conflux_strength, cs)
 
-        draw_path(x_batch, gt_batch, goal=goal_batch, predictions=predictions, name=plot_name)
+        save_file = None
+        if save:
+            save_file = f"{name}_{batch_index}"
+
+        draw_path(x_batch, gt_batch, goal=goal_batch, predictions=predictions, name=plot_name, save_file=save_file)
 
 
 def draw_histories(history_key, y_label, history_dicts, names, graph_name=None, save_file=None, max_x=None):
