@@ -45,7 +45,7 @@ def simple_cnn(input_shape, use_dropout=False, dropout_rate=0.2):
         x = layers.Dropout(rate=dropout_rate)(x, training=True)
 
     x = layers.Flatten()(x)
-    x = layers.Dense(4 * OUTPUT_SIZE)(x)
+    x = layers.Dense(4 * OUTPUT_SIZE, activation='relu')(x)
 
     if use_dropout:
         x = layers.Dropout(rate=dropout_rate)(x, training=True)
