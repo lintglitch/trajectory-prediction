@@ -14,3 +14,4 @@ figures/
 checkpoints/
 *.pdf
 *.shelve
+tmp*
