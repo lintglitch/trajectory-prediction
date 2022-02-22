@@ -9,7 +9,6 @@ from keras import layers
 from src import config
 
 CONV_WIDTH = 3
-LSTM_DEPTH = 128
 OUTPUT_SIZE = config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES
 
 
@@ -17,7 +16,7 @@ OUTPUT_SIZE = config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES
 def simple_lstm(train_data):
     ## simple LSTM (works both for goal or no goal)
     model = tf.keras.Sequential()
-    model.add(layers.LSTM(LSTM_DEPTH))
+    model.add(layers.LSTM(64))
     model.add(layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES))
     model.add(layers.Reshape([config.OUTPUT_FRAME_NUMBER, config.NUM_INPUT_FEATURES]))
     return model
@@ -26,7 +25,7 @@ def simple_lstm(train_data):
 # TODO try more complex lstm with dropout
 def simple_lstm_dropout(train_data):
     inputs = keras.Input(shape=train_data[0].shape[1:])
-    x = layers.LSTM(LSTM_DEPTH)(inputs)
+    x = layers.LSTM(64)(inputs)
     x = layers.Dropout(rate=0.2)(x, training=True)
     x = layers.Flatten()(x)
     x = layers.Dense(config.OUTPUT_FRAME_NUMBER*config.NUM_INPUT_FEATURES)(x)
